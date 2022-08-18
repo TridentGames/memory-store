@@ -45,7 +45,7 @@ public class References<K, V> {
   }
 
   public Set<Reference<V>> getAllReferences() {
-    return Collections.unmodifiableSet(this.reducedReferences);
+    return new HashSet<>(this.reducedReferences);
   }
 
   public List<V> getAll() {
