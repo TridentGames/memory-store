@@ -45,7 +45,7 @@ public class References<K, V> {
   }
 
   public Set<Reference<V>> getAllReferences() {
-    return new HashSet<>(this.reducedReferences);
+    return new LinkedHashSet<>(this.reducedReferences);
   }
 
   public List<V> getAll() {
