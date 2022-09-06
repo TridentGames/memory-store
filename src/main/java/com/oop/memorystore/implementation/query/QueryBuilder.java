@@ -4,8 +4,7 @@ public class QueryBuilder {
 
     private final QueryImpl query = new QueryImpl();
 
-    protected QueryBuilder() {
-    }
+    protected QueryBuilder() {}
 
     public static QueryBuilder create() {
         return new QueryBuilder();

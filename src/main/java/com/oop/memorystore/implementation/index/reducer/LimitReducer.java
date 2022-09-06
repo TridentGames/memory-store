@@ -1,7 +1,6 @@
 package com.oop.memorystore.implementation.index.reducer;
 
 import com.oop.memorystore.implementation.index.Element;
-
 import java.util.List;
 
 /**
@@ -11,41 +10,41 @@ import java.util.List;
  * @param <V> value type
  */
 public class LimitReducer<K, V> implements Reducer<K, V> {
-  private final int limit;
-  private final Retain retain;
+    private final int limit;
+    private final Retain retain;
 
-  public LimitReducer(final int limit, final Retain retain) {
-    this.limit = limit;
-    this.retain = retain;
-  }
-
-  @Override
-  public void reduce(final K key, final List<Element<V>> elements) {
-    if (elements.size() <= this.limit) {
-      return;
+    public LimitReducer(final int limit, final Retain retain) {
+        this.limit = limit;
+        this.retain = retain;
     }
 
-    if (this.retain == Retain.OLDEST) {
-        this.reduceOldest(elements);
-    } else if (this.retain == Retain.NEWEST) {
-        this.reduceNewest(elements);
-    }
-  }
+    @Override
+    public void reduce(final K key, final List<Element<V>> elements) {
+        if (elements.size() <= this.limit) {
+            return;
+        }
 
-  private void reduceNewest(final List<Element<V>> elements) {
-    for (int i = 0; i < (elements.size() - this.limit); i++) {
-      elements.get(i).remove();
+        if (this.retain == Retain.OLDEST) {
+            this.reduceOldest(elements);
+        } else if (this.retain == Retain.NEWEST) {
+            this.reduceNewest(elements);
+        }
     }
-  }
 
-  private void reduceOldest(final List<Element<V>> elements) {
-    for (int i = this.limit; i < elements.size(); i++) {
-      elements.get(i).remove();
+    private void reduceNewest(final List<Element<V>> elements) {
+        for (int i = 0; i < (elements.size() - this.limit); i++) {
+            elements.get(i).remove();
+        }
     }
-  }
 
-  public enum Retain {
-    NEWEST,
-    OLDEST
-  }
+    private void reduceOldest(final List<Element<V>> elements) {
+        for (int i = this.limit; i < elements.size(); i++) {
+            elements.get(i).remove();
+        }
+    }
+
+    public enum Retain {
+        NEWEST,
+        OLDEST
+    }
 }

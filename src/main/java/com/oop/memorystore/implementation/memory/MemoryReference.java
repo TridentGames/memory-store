@@ -8,19 +8,19 @@ import com.oop.memorystore.implementation.reference.Reference;
  * @param <V> reference type
  */
 public class MemoryReference<V> implements Reference<V> {
-  private final V reference;
+    private final V reference;
 
-  public MemoryReference(final V reference) {
-    this.reference = reference;
-  }
+    public MemoryReference(final V reference) {
+        this.reference = reference;
+    }
 
-  @Override
-  public V get() {
-    return this.reference;
-  }
+    @Override
+    public V get() {
+        return this.reference;
+    }
 
-  @Override
-  public String toString() {
-    return String.valueOf(this.reference);
-  }
+    @Override
+    public String toString() {
+        return String.valueOf(this.reference);
+    }
 }

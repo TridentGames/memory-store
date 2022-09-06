@@ -3,7 +3,6 @@ package com.oop.memorystore.implementation.expiring.policy;
 import java.util.function.BiPredicate;
 
 public interface ExpiringPolicy<V, T extends ExpiringPolicy.ExpirationData> {
-
     String named();
 
     default T createExpirationData(final V value) {
@@ -21,6 +20,5 @@ public interface ExpiringPolicy<V, T extends ExpiringPolicy.ExpirationData> {
         return this::checkExpiration;
     }
 
-    interface ExpirationData {
-    }
+    interface ExpirationData {}
 }

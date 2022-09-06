@@ -21,15 +21,10 @@ public class MemoryStore<V> extends AbstractStore<V> {
     }
 
     public MemoryStore() {
-        this(
-            new DefaultReferenceManager<>(
-                new DefaultIdentityProvider(), new MemoryReferenceFactory<>()),
-            new ReferenceIndexManager<>()
-        );
+        this(new DefaultReferenceManager<>(new DefaultIdentityProvider(), new MemoryReferenceFactory<>()), new ReferenceIndexManager<>());
     }
 
-    private MemoryStore(
-        final ReferenceManager<V> referenceManager, final IndexManager<V> indexManager) {
+    private MemoryStore(final ReferenceManager<V> referenceManager, final IndexManager<V> indexManager) {
         super(referenceManager, indexManager);
     }
 
@@ -61,8 +56,7 @@ public class MemoryStore<V> extends AbstractStore<V> {
     }
 
     @Override
-    protected Store<V> createCopy(
-        final ReferenceManager<V> referenceManager, final IndexManager<V> indexManager) {
+    protected Store<V> createCopy(final ReferenceManager<V> referenceManager, final IndexManager<V> indexManager) {
         return new MemoryStore<>(referenceManager.copy(), indexManager.copy());
     }
 

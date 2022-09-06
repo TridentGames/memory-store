@@ -2,10 +2,14 @@ package com.oop.memorystore.implementation;
 
 import com.oop.memorystore.api.Store;
 import com.oop.memorystore.api.StoreQuery;
-import com.oop.memorystore.implementation.index.*;
+import com.oop.memorystore.implementation.index.Index;
+import com.oop.memorystore.implementation.index.IndexDefinition;
+import com.oop.memorystore.implementation.index.IndexException;
+import com.oop.memorystore.implementation.index.IndexManager;
+import com.oop.memorystore.implementation.index.KeyMapper;
+import com.oop.memorystore.implementation.index.SynchronizedIndex;
 import com.oop.memorystore.implementation.index.reducer.Reducer;
 import com.oop.memorystore.implementation.query.Query;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -19,473 +23,474 @@ import java.util.stream.Collectors;
  * @param <V> value type
  */
 public class SynchronizedStore<V> implements Store<V> {
-  protected final Store<V> store;
-  protected final Object mutex;
+    protected final Store<V> store;
+    protected final Object mutex;
 
-  public SynchronizedStore(final Store<V> store) {
-    this.store = store;
-    this.mutex = this;
-  }
-
-  @Override
-  public Index<V> getIndex(final String indexName) {
-    final Index<V> index;
-
-    synchronized (this.mutex) {
-      final Index<V> found = this.store.getIndex(indexName);
-      index = found == null ? null : new SynchronizedIndex<>(found, this.mutex);
+    public SynchronizedStore(final Store<V> store) {
+        this.store = store;
+        this.mutex = this;
     }
 
-    return index;
-  }
+    @Override
+    public Index<V> getIndex(final String indexName) {
+        final Index<V> index;
 
-  @Override
-  public Collection<Index<V>> getIndexes() {
-    final List<Index<V>> indexes;
+        synchronized (this.mutex) {
+            final Index<V> found = this.store.getIndex(indexName);
+            index = found == null ? null : new SynchronizedIndex<>(found, this.mutex);
+        }
 
-    synchronized (this.mutex) {
-      indexes =
-          this.store.getIndexes().stream()
-              .map(index -> new SynchronizedIndex<>(index, this.mutex))
-              .collect(Collectors.toList());
+        return index;
     }
 
-    return indexes;
-  }
+    @Override
+    public Collection<Index<V>> getIndexes() {
+        final List<Index<V>> indexes;
 
-  @Override
-  public List<V> remove(final Query query, final int limit) {
-    synchronized (this.mutex) {
-      return this.store.remove(query, limit);
-    }
-  }
+        synchronized (this.mutex) {
+            indexes =
+                this.store.getIndexes()
+                    .stream()
+                    .map(index -> new SynchronizedIndex<>(index, this.mutex))
+                    .collect(Collectors.toList());
+        }
 
-  @Override
-  public void removeAllIndexes() {
-    synchronized (this.mutex) {
-        this.store.removeAllIndexes();
-    }
-  }
-
-  @Override
-  public Optional<Index<V>> findIndex(final String indexName) {
-    final Optional<Index<V>> optionalIndex;
-
-    synchronized (this.mutex) {
-      optionalIndex =
-          this.store.findIndex(indexName).map(index -> new SynchronizedIndex<>(index, this.mutex));
+        return indexes;
     }
 
-    return optionalIndex;
-  }
-
-  @Override
-  public boolean removeIndex(final Index<V> index) {
-    final boolean removed;
-
-    synchronized (this.mutex) {
-      if (index instanceof SynchronizedIndex) {
-        removed = this.store.removeIndex(((SynchronizedIndex<V>) index).getIndex());
-      } else {
-        removed = this.store.removeIndex(index);
-      }
+    @Override
+    public List<V> remove(final Query query, final int limit) {
+        synchronized (this.mutex) {
+            return this.store.remove(query, limit);
+        }
     }
 
-    return removed;
-  }
-
-  @Override
-  public boolean removeIndex(final String indexName) {
-    final boolean removed;
-
-    synchronized (this.mutex) {
-      removed = this.store.removeIndex(indexName);
+    @Override
+    public void removeAllIndexes() {
+        synchronized (this.mutex) {
+            this.store.removeAllIndexes();
+        }
     }
 
-    return removed;
-  }
+    @Override
+    public Optional<Index<V>> findIndex(final String indexName) {
+        final Optional<Index<V>> optionalIndex;
 
-  @Override
-  public <K> Index<V> index(final String indexName, final IndexDefinition<K, V> indexDefinition)
-      throws IndexException {
-    final Index<V> index;
+        synchronized (this.mutex) {
+            optionalIndex =
+                this.store.findIndex(indexName).map(index -> new SynchronizedIndex<>(index, this.mutex));
+        }
 
-    synchronized (this.mutex) {
-      index = this.store.index(indexName, indexDefinition);
+        return optionalIndex;
     }
 
-    return index;
-  }
+    @Override
+    public boolean removeIndex(final Index<V> index) {
+        final boolean removed;
 
-  @Override
-  public <K> Index<V> index(final IndexDefinition<K, V> indexDefinition) throws IndexException {
-    final Index<V> index;
+        synchronized (this.mutex) {
+            if (index instanceof SynchronizedIndex) {
+                removed = this.store.removeIndex(((SynchronizedIndex<V>) index).getIndex());
+            } else {
+                removed = this.store.removeIndex(index);
+            }
+        }
 
-    synchronized (this.mutex) {
-      index = this.store.index(indexDefinition);
+        return removed;
     }
 
-    return index;
-  }
+    @Override
+    public boolean removeIndex(final String indexName) {
+        final boolean removed;
 
-  @Override
-  public <K> Index<V> index(final String indexName, final KeyMapper<K, V> keyMapper)
-      throws IndexException {
-    final Index<V> index;
+        synchronized (this.mutex) {
+            removed = this.store.removeIndex(indexName);
+        }
 
-    synchronized (this.mutex) {
-      index = this.store.index(indexName, keyMapper);
+        return removed;
     }
 
-    return index;
-  }
+    @Override
+    public <K> Index<V> index(final String indexName, final IndexDefinition<K, V> indexDefinition)
+        throws IndexException {
+        final Index<V> index;
 
-  @Override
-  public <K> Index<V> index(final KeyMapper<K, V> keyMapper) throws IndexException {
-    final Index<V> index;
+        synchronized (this.mutex) {
+            index = this.store.index(indexName, indexDefinition);
+        }
 
-    synchronized (this.mutex) {
-      index = this.store.index(keyMapper);
+        return index;
     }
 
-    return index;
-  }
+    @Override
+    public <K> Index<V> index(final IndexDefinition<K, V> indexDefinition) throws IndexException {
+        final Index<V> index;
 
-  @Override
-  public <K> Index<V> index(
-      final String indexName, final KeyMapper<K, V> keyMapper, final Reducer<K, V> reducer)
-      throws IndexException {
-    final Index<V> index;
+        synchronized (this.mutex) {
+            index = this.store.index(indexDefinition);
+        }
 
-    synchronized (this.mutex) {
-      index = this.store.index(indexName, keyMapper, reducer);
+        return index;
     }
 
-    return index;
-  }
+    @Override
+    public <K> Index<V> index(final String indexName, final KeyMapper<K, V> keyMapper)
+        throws IndexException {
+        final Index<V> index;
 
-  @Override
-  public <K> Index<V> index(final KeyMapper<K, V> keyMapper, final Reducer<K, V> reducer)
-      throws IndexException {
-    final Index<V> index;
+        synchronized (this.mutex) {
+            index = this.store.index(indexName, keyMapper);
+        }
 
-    synchronized (this.mutex) {
-      index = this.store.index(keyMapper, reducer);
+        return index;
     }
 
-    return index;
-  }
+    @Override
+    public <K> Index<V> index(final KeyMapper<K, V> keyMapper) throws IndexException {
+        final Index<V> index;
 
-  @Override
-  public List<V> get(final String indexName, final Object key, final int limit) {
-    final List<V> results;
+        synchronized (this.mutex) {
+            index = this.store.index(keyMapper);
+        }
 
-    synchronized (this.mutex) {
-      results = this.store.get(indexName, key, limit);
+        return index;
     }
 
-    return results;
-  }
+    @Override
+    public <K> Index<V> index(
+        final String indexName, final KeyMapper<K, V> keyMapper, final Reducer<K, V> reducer)
+        throws IndexException {
+        final Index<V> index;
 
-  @Override
-  public List<V> get(final String indexName, final Object key) {
-    final List<V> results;
+        synchronized (this.mutex) {
+            index = this.store.index(indexName, keyMapper, reducer);
+        }
 
-    synchronized (this.mutex) {
-      results = this.store.get(indexName, key);
+        return index;
     }
 
-    return results;
-  }
+    @Override
+    public <K> Index<V> index(final KeyMapper<K, V> keyMapper, final Reducer<K, V> reducer)
+        throws IndexException {
+        final Index<V> index;
 
-  @Override
-  public V getFirst(final String indexName, final Object key) {
-    final V result;
+        synchronized (this.mutex) {
+            index = this.store.index(keyMapper, reducer);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.getFirst(indexName, key);
+        return index;
     }
 
-    return result;
-  }
+    @Override
+    public List<V> get(final String indexName, final Object key, final int limit) {
+        final List<V> results;
 
-  @Override
-  public Optional<V> findFirst(final String indexName, final Object key) {
-    final Optional<V> result;
+        synchronized (this.mutex) {
+            results = this.store.get(indexName, key, limit);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.findFirst(indexName, key);
+        return results;
     }
 
-    return result;
-  }
+    @Override
+    public List<V> get(final String indexName, final Object key) {
+        final List<V> results;
 
-  @Override
-  public List<V> get(final Query query, final int limit) {
-    final List<V> results;
+        synchronized (this.mutex) {
+            results = this.store.get(indexName, key);
+        }
 
-    synchronized (this.mutex) {
-      results = this.store.get(query, limit);
+        return results;
     }
 
-    return results;
-  }
+    @Override
+    public V getFirst(final String indexName, final Object key) {
+        final V result;
 
-  @Override
-  public List<V> get(final Query query) {
-    final List<V> results;
+        synchronized (this.mutex) {
+            result = this.store.getFirst(indexName, key);
+        }
 
-    synchronized (this.mutex) {
-      results = this.store.get(query);
+        return result;
     }
 
-    return results;
-  }
+    @Override
+    public Optional<V> findFirst(final String indexName, final Object key) {
+        final Optional<V> result;
 
-  @Override
-  public V getFirst(final Query query) {
-    final V result;
+        synchronized (this.mutex) {
+            result = this.store.findFirst(indexName, key);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.getFirst(query);
+        return result;
     }
 
-    return result;
-  }
+    @Override
+    public List<V> get(final Query query, final int limit) {
+        final List<V> results;
 
-  @Override
-  public Optional<V> findFirst(final Query query) {
-    final Optional<V> result;
+        synchronized (this.mutex) {
+            results = this.store.get(query, limit);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.findFirst(query);
+        return results;
     }
 
-    return result;
-  }
+    @Override
+    public List<V> get(final Query query) {
+        final List<V> results;
 
-  @Override
-  public void reindex() {
-    synchronized (this.mutex) {
-        this.store.reindex();
-    }
-  }
+        synchronized (this.mutex) {
+            results = this.store.get(query);
+        }
 
-  @Override
-  public void reindex(final Collection<V> items) {
-    synchronized (this.mutex) {
-        this.store.reindex(items);
-    }
-  }
-
-  @Override
-  public void reindex(final V item) {
-    synchronized (this.mutex) {
-        this.store.reindex(item);
-    }
-  }
-
-  @Override
-  public Store<V> copy() {
-    final Store<V> copy;
-
-    synchronized (this.mutex) {
-      copy = this.store.copy();
+        return results;
     }
 
-    return copy;
-  }
+    @Override
+    public V getFirst(final Query query) {
+        final V result;
 
-  @Override
-  public int size() {
-    final int size;
+        synchronized (this.mutex) {
+            result = this.store.getFirst(query);
+        }
 
-    synchronized (this.mutex) {
-      size = this.store.size();
+        return result;
     }
 
-    return size;
-  }
+    @Override
+    public Optional<V> findFirst(final Query query) {
+        final Optional<V> result;
 
-  @Override
-  public boolean isEmpty() {
-    final boolean empty;
+        synchronized (this.mutex) {
+            result = this.store.findFirst(query);
+        }
 
-    synchronized (this.mutex) {
-      empty = this.store.isEmpty();
+        return result;
     }
 
-    return empty;
-  }
-
-  @Override
-  public boolean contains(final Object obj) {
-    final boolean contains;
-
-    synchronized (this.mutex) {
-      contains = this.store.contains(obj);
+    @Override
+    public void reindex() {
+        synchronized (this.mutex) {
+            this.store.reindex();
+        }
     }
 
-    return contains;
-  }
-
-  @Override
-  public Iterator<V> iterator() {
-    return this.store.iterator();
-  }
-
-  @Override
-  public Object[] toArray() {
-    final Object[] array;
-
-    synchronized (this.mutex) {
-      array = this.store.toArray();
+    @Override
+    public void reindex(final Collection<V> items) {
+        synchronized (this.mutex) {
+            this.store.reindex(items);
+        }
     }
 
-    return array;
-  }
-
-  @Override
-  public <T1> T1[] toArray(final T1[] array) {
-    final T1[] toArray;
-
-    synchronized (this.mutex) {
-      toArray = this.store.toArray(array);
+    @Override
+    public void reindex(final V item) {
+        synchronized (this.mutex) {
+            this.store.reindex(item);
+        }
     }
 
-    return toArray;
-  }
+    @Override
+    public Store<V> copy() {
+        final Store<V> copy;
 
-  @Override
-  public boolean add(final V item) {
-    final boolean result;
+        synchronized (this.mutex) {
+            copy = this.store.copy();
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.add(item);
+        return copy;
     }
 
-    return result;
-  }
+    @Override
+    public int size() {
+        final int size;
 
-  @Override
-  public boolean remove(final Object obj) {
-    final boolean result;
+        synchronized (this.mutex) {
+            size = this.store.size();
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.remove(obj);
+        return size;
     }
 
-    return result;
-  }
+    @Override
+    public boolean isEmpty() {
+        final boolean empty;
 
-  @Override
-  public boolean containsAll(final Collection<?> collection) {
-    final boolean result;
+        synchronized (this.mutex) {
+            empty = this.store.isEmpty();
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.containsAll(collection);
+        return empty;
     }
 
-    return result;
-  }
+    @Override
+    public boolean contains(final Object obj) {
+        final boolean contains;
 
-  @Override
-  public boolean addAll(final Collection<? extends V> collection) {
-    final boolean result;
+        synchronized (this.mutex) {
+            contains = this.store.contains(obj);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.addAll(collection);
+        return contains;
     }
 
-    return result;
-  }
-
-  @Override
-  public boolean addAll(final V[] items) throws IndexException {
-    final boolean result;
-
-    synchronized (this.mutex) {
-      result = this.store.addAll(items);
+    @Override
+    public Iterator<V> iterator() {
+        return this.store.iterator();
     }
 
-    return result;
-  }
+    @Override
+    public Object[] toArray() {
+        final Object[] array;
 
-  @Override
-  public boolean removeAll(final Collection<?> collection) {
-    final boolean result;
+        synchronized (this.mutex) {
+            array = this.store.toArray();
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.removeAll(collection);
+        return array;
     }
 
-    return result;
-  }
+    @Override
+    public <T1> T1[] toArray(final T1[] array) {
+        final T1[] toArray;
 
-  @Override
-  public boolean removeIf(final Predicate<? super V> filter) {
-    final boolean result;
+        synchronized (this.mutex) {
+            toArray = this.store.toArray(array);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.removeIf(filter);
+        return toArray;
     }
 
-    return result;
-  }
+    @Override
+    public boolean add(final V item) {
+        final boolean result;
 
-  @Override
-  public boolean retainAll(final Collection<?> collection) {
-    final boolean result;
+        synchronized (this.mutex) {
+            result = this.store.add(item);
+        }
 
-    synchronized (this.mutex) {
-      result = this.store.retainAll(collection);
+        return result;
     }
 
-    return result;
-  }
+    @Override
+    public boolean remove(final Object obj) {
+        final boolean result;
 
-  @Override
-  public void clear() {
-    synchronized (this.mutex) {
-        this.store.clear();
+        synchronized (this.mutex) {
+            result = this.store.remove(obj);
+        }
+
+        return result;
     }
-  }
 
-  public Store<V> getStore() {
-    return this.store;
-  }
+    @Override
+    public boolean containsAll(final Collection<?> collection) {
+        final boolean result;
 
-  @Override
-  public Store<V> synchronizedStore() {
-    return this;
-  }
+        synchronized (this.mutex) {
+            result = this.store.containsAll(collection);
+        }
 
-  @Override
-  public void lockIndexing(final boolean lockIndexing) {
-    synchronized (this.mutex) {
-        this.store.lockIndexing(lockIndexing);
+        return result;
     }
-  }
 
-  @Override
-  public StoreQuery<V> createQuery() {
-    return new StoreQueryImpl<>(this);
-  }
+    @Override
+    public boolean addAll(final Collection<? extends V> collection) {
+        final boolean result;
 
-  @Override
-  public void printDetails(V value) {
-    synchronized (this.mutex) {
-      this.store.printDetails(value);
+        synchronized (this.mutex) {
+            result = this.store.addAll(collection);
+        }
+
+        return result;
     }
-  }
 
-  @Override
-  public IndexManager<V> getIndexManager() {
-    return this.store.getIndexManager();
-  }
+    @Override
+    public boolean addAll(final V[] items) throws IndexException {
+        final boolean result;
 
-  @Override
-  public String toString() {
-    return this.store.toString();
-  }
+        synchronized (this.mutex) {
+            result = this.store.addAll(items);
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean removeAll(final Collection<?> collection) {
+        final boolean result;
+
+        synchronized (this.mutex) {
+            result = this.store.removeAll(collection);
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean removeIf(final Predicate<? super V> filter) {
+        final boolean result;
+
+        synchronized (this.mutex) {
+            result = this.store.removeIf(filter);
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean retainAll(final Collection<?> collection) {
+        final boolean result;
+
+        synchronized (this.mutex) {
+            result = this.store.retainAll(collection);
+        }
+
+        return result;
+    }
+
+    @Override
+    public void clear() {
+        synchronized (this.mutex) {
+            this.store.clear();
+        }
+    }
+
+    public Store<V> getStore() {
+        return this.store;
+    }
+
+    @Override
+    public Store<V> synchronizedStore() {
+        return this;
+    }
+
+    @Override
+    public void lockIndexing(final boolean lockIndexing) {
+        synchronized (this.mutex) {
+            this.store.lockIndexing(lockIndexing);
+        }
+    }
+
+    @Override
+    public StoreQuery<V> createQuery() {
+        return new StoreQueryImpl<>(this);
+    }
+
+    @Override
+    public void printDetails(V value) {
+        synchronized (this.mutex) {
+            this.store.printDetails(value);
+        }
+    }
+
+    @Override
+    public IndexManager<V> getIndexManager() {
+        return this.store.getIndexManager();
+    }
+
+    @Override
+    public String toString() {
+        return this.store.toString();
+    }
 }

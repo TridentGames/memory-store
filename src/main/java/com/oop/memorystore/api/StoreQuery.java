@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 /**
  * Usage at {@link Store#createQuery()}
+ *
  * @param <V> Store value type
  */
 public interface StoreQuery<V> {

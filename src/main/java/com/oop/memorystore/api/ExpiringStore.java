@@ -1,7 +1,5 @@
 package com.oop.memorystore.api;
 
-import com.oop.memorystore.implementation.expiring.policy.ExpiringPolicy;
-
 /**
  * Expiring store contains values that can expire after x time
  */

@@ -1,7 +1,6 @@
 package com.oop.memorystore.implementation.index.reducer;
 
 import com.oop.memorystore.implementation.index.Element;
-
 import java.util.List;
 import java.util.function.Function;
 
@@ -12,18 +11,18 @@ import java.util.function.Function;
  * @param <V> value
  */
 public class NullReducer<K, V> implements Reducer<K, V> {
-  private final Function<V, ?> valueProvider;
+    private final Function<V, ?> valueProvider;
 
-  public NullReducer(final Function<V, ?> valueProvider) {
-    this.valueProvider = valueProvider;
-  }
-
-  @Override
-  public void reduce(final K key, final List<Element<V>> elements) {
-    for (final Element<V> element : elements) {
-      if (this.valueProvider.apply(element.get()) == null) {
-        element.remove();
-      }
+    public NullReducer(final Function<V, ?> valueProvider) {
+        this.valueProvider = valueProvider;
     }
-  }
+
+    @Override
+    public void reduce(final K key, final List<Element<V>> elements) {
+        for (final Element<V> element : elements) {
+            if (this.valueProvider.apply(element.get()) == null) {
+                element.remove();
+            }
+        }
+    }
 }

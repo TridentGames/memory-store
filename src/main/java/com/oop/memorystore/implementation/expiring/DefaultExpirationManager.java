@@ -16,9 +16,7 @@ import java.util.function.Consumer;
  * @param <V>
  */
 public class DefaultExpirationManager<V> implements ExpirationManager<V> {
-    private final Map<ExpiringPolicy<V, ?>, Map<V, ExpiringPolicy.ExpirationData>> policyData =
-        new HashMap<>();
-
+    private final Map<ExpiringPolicy<V, ?>, Map<V, ExpiringPolicy.ExpirationData>> policyData = new HashMap<>();
     private final List<Consumer<V>> globalExpireListeners = new LinkedList<>();
 
     @SafeVarargs

@@ -6,10 +6,10 @@ package com.oop.memorystore.implementation.reference;
  * @param <V> type of item referenced
  */
 public interface Reference<V> {
-  /**
-   * Get referenced item
-   *
-   * @return referenced item
-   */
-  V get();
+    /**
+     * Get referenced item
+     *
+     * @return referenced item
+     */
+    V get();
 }

@@ -43,8 +43,7 @@ public interface Store<V> extends Collection<V> {
     boolean addAll(Collection<? extends V> items) throws IndexException;
 
     /**
-     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options
-     * see {@link #index(IndexDefinition)}
+     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options see {@link #index(IndexDefinition)}
      *
      * @param indexName name of the index
      * @param keyMapper function to provide a value to one or more keys
@@ -69,8 +68,7 @@ public interface Store<V> extends Collection<V> {
     <K> Index<V> index(String indexName, IndexDefinition<K, V> indexDefinition) throws IndexException;
 
     /**
-     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options
-     * see {@link #index(IndexDefinition)}
+     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options see {@link #index(IndexDefinition)}
      *
      * @param indexName name of the index
      * @param keyMapper function to provide a value to one or more keys
@@ -86,8 +84,7 @@ public interface Store<V> extends Collection<V> {
     }
 
     /**
-     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options
-     * see {@link #index(IndexDefinition)}
+     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options see {@link #index(IndexDefinition)}
      *
      * @param keyMapper function to provide a value to one or more keys
      * @param reducer   function to reduce indexed values
@@ -113,8 +110,7 @@ public interface Store<V> extends Collection<V> {
     }
 
     /**
-     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options
-     * see {@link #index(IndexDefinition)}
+     * Register a new index with this store, mapping a single value to a collection of indexed keys. This is a convenient of creating an index, for more options see {@link #index(IndexDefinition)}
      *
      * @param keyMapper function to provide a value to one or more keys
      * @param <K>       key type
@@ -158,8 +154,7 @@ public interface Store<V> extends Collection<V> {
     }
 
     /**
-     * Query an index by name and lookup the given key. This method is the equivalent of calling {@link #getIndex(String)} and then {@link
-     * Index#findFirst(Object)}
+     * Query an index by name and lookup the given key. This method is the equivalent of calling {@link #getIndex(String)} and then {@link Index#findFirst(Object)}
      *
      * @param indexName name of the index to query
      * @param key       key to lookup
@@ -170,8 +165,7 @@ public interface Store<V> extends Collection<V> {
     }
 
     /**
-     * Query an index by name and lookup the given key. This method is the equivalent of calling {@link #getIndex(String)} and then {@link
-     * Index#getFirst(Object)}
+     * Query an index by name and lookup the given key. This method is the equivalent of calling {@link #getIndex(String)} and then {@link Index#getFirst(Object)}
      *
      * @param indexName name of the index to query
      * @param key       key to lookup
@@ -267,16 +261,14 @@ public interface Store<V> extends Collection<V> {
     boolean removeIndex(String indexName);
 
     /**
-     * Clear the existing indexes and reindex the entire store. This can be a slow operation depending on the number of items in the store and total number of
-     * indexes.
+     * Clear the existing indexes and reindex the entire store. This can be a slow operation depending on the number of items in the store and total number of indexes.
      *
      * @throws IndexException thrown if one or more indexes failed with exceptions.
      */
     void reindex() throws IndexException;
 
     /**
-     * Reindex a collection of items. This method will need to be called anytime a change is made to items stored within the store that causes its indexes to
-     * become out of date.
+     * Reindex a collection of items. This method will need to be called anytime a change is made to items stored within the store that causes its indexes to become out of date.
      *
      * @param items items to reindex
      * @throws IndexException thrown if one or more indexes failed with exceptions.
@@ -284,8 +276,7 @@ public interface Store<V> extends Collection<V> {
     void reindex(Collection<V> items) throws IndexException;
 
     /**
-     * Reindex a particular item. This method will need to be called anytime a change is made to an item stored within the store that causes its indexes to
-     * become out of date.
+     * Reindex a particular item. This method will need to be called anytime a change is made to an item stored within the store that causes its indexes to become out of date.
      *
      * @param item item to reindex
      * @throws IndexException thrown if one or more indexes failed with exceptions.
@@ -304,16 +295,14 @@ public interface Store<V> extends Collection<V> {
     }
 
     /**
-     * Create a copy of this store. This can be an expensive operation depending on the number of items and indexes present. The copied store will be fully
-     * independent from this store. Any changes made to the copy will not reflect back onto this store.
+     * Create a copy of this store. This can be an expensive operation depending on the number of items and indexes present. The copied store will be fully independent from this store. Any changes made to the copy will not reflect back onto this store.
      *
      * @return copy
      */
     Store<V> copy();
 
     /**
-     * Returns an unmodifiable view of this store. This method allows modules to provide users with "read-only" access to internal collections. Query operations
-     * on the returned store "read through" the backed store, and attempts to modify the returned store, whether direct or via its iterator, result in an
+     * Returns an unmodifiable view of this store. This method allows modules to provide users with "read-only" access to internal collections. Query operations on the returned store "read through" the backed store, and attempts to modify the returned store, whether direct or via its iterator, result in an
      * <tt>UnsupportedOperationException</tt>.
      *
      * <p>

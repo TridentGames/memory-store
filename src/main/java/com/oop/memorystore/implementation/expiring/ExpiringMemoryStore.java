@@ -11,16 +11,16 @@ import com.oop.memorystore.implementation.index.IndexManager;
 import com.oop.memorystore.implementation.index.ReferenceIndex;
 import com.oop.memorystore.implementation.index.ReferenceIndexManager;
 import com.oop.memorystore.implementation.memory.MemoryReference;
-import com.oop.memorystore.implementation.query.IndexMatch;
+import com.oop.memorystore.implementation.query.IMatchable;
+import com.oop.memorystore.implementation.query.imp.IndexContains;
+import com.oop.memorystore.implementation.query.imp.IndexMatch;
 import com.oop.memorystore.implementation.query.Operator;
 import com.oop.memorystore.implementation.query.Query;
 import com.oop.memorystore.implementation.query.QueryDefinition;
 import com.oop.memorystore.implementation.reference.DefaultReferenceManager;
 import com.oop.memorystore.implementation.reference.Reference;
 import com.oop.memorystore.implementation.reference.ReferenceManager;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -32,10 +32,8 @@ public class ExpiringMemoryStore<V> extends AbstractStore<V> implements Expiring
     private final DefaultExpirationManager<V> expirationManager;
 
     public ExpiringMemoryStore(final ExpiringPolicy<V, ?>... policies) {
-        super(
-            new DefaultReferenceManager<>(
-                new DefaultIdentityProvider(), new ExpiringReferenceFactory<>(), new ConcurrentHashMap<>()),
-            new ReferenceIndexManager<>());
+        super(new DefaultReferenceManager<>(new DefaultIdentityProvider(), new ExpiringReferenceFactory<>(), new ConcurrentHashMap<>()), new ReferenceIndexManager<>());
+
         this.expirationManager = new DefaultExpirationManager<>(policies);
     }
 
@@ -71,38 +69,44 @@ public class ExpiringMemoryStore<V> extends AbstractStore<V> implements Expiring
     @Override
     public List<V> get(final Query query, final int limit) {
         final QueryDefinition definition = query.build();
-        final List<IndexMatch> indexMatches = definition.getIndexMatches();
+        final List<IMatchable> indexMatches = definition.getIndexMatches();
         final Operator operator = definition.getOperator();
         final Set<Reference<V>> results = new LinkedHashSet<>();
 
         boolean firstMatch = true;
 
-        for (final IndexMatch indexMatch : indexMatches) {
-            final ReferenceIndex<?, V> referenceIndex = this.indexManager.getIndex(indexMatch.getIndexName());
-            if (referenceIndex == null) {
-                continue;
+        for (final IMatchable matchable : indexMatches) {
+            if (matchable instanceof IndexMatch) {
+                final ReferenceIndex<?, V> referenceIndex = this.indexManager.getIndex(matchable.getIndexName());
+                if (referenceIndex == null) {
+                    continue;
+                }
+
+                final Set<Reference<V>> references =
+                    new HashSet<>(Optional.of(referenceIndex)
+                        .map(index -> index.getReferences(matchable.getKey()))
+                        .orElse(new HashSet<>()));
+
+                references.removeIf(
+                    reference -> {
+                        final boolean shouldBeInvalidated = this.expirationManager.checkExpiration(reference.get());
+                        if (shouldBeInvalidated) {
+                            this.invalidate(reference.get());
+                        }
+
+                        return shouldBeInvalidated;
+                    });
+
+                if (firstMatch || operator == Operator.OR) {
+                    results.addAll(references);
+                    firstMatch = false;
+                } else {
+                    results.retainAll(references);
+                }
             }
 
-            final Set<Reference<V>> references =
-                new HashSet<>(Optional.of(referenceIndex)
-                    .map(index -> index.getReferences(indexMatch.getKey()))
-                    .orElse(new HashSet<>()));
-
-            references.removeIf(
-                reference -> {
-                    final boolean shouldBeInvalidated = this.expirationManager.checkExpiration(reference.get());
-                    if (shouldBeInvalidated) {
-                        this.invalidate(reference.get());
-                    }
-
-                    return shouldBeInvalidated;
-                });
-
-            if (firstMatch || operator == Operator.OR) {
-                results.addAll(references);
-                firstMatch = false;
-            } else {
-                results.retainAll(references);
+            if (matchable instanceof IndexContains) {
+                System.out.println("IndexContains 3");
             }
         }
 

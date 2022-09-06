@@ -71,7 +71,6 @@ public class StoreQueryImpl<V> implements StoreQuery<V> {
             .stream()
             .findFirst()
             .map(Reference::get);
-
     }
 
     protected LinkedHashSet<Reference<V>> getValuesOfIndex(final ReferenceIndex<?, V> index, final Object key) {

@@ -19,10 +19,7 @@ public abstract class IndexManager<V> {
         indexes.forEach(index -> this.indexMap.put(index.getName(), index));
     }
 
-    public <K> ReferenceIndex<K, V> createIndex(
-        final String indexName,
-        final IndexDefinition<K, V> indexDefinition,
-        final Collection<Reference<V>> references) {
+    public <K> ReferenceIndex<K, V> createIndex(final String indexName, final IndexDefinition<K, V> indexDefinition, final Collection<Reference<V>> references) {
         if (this.indexMap.containsKey(indexName)) {
             throw new IllegalArgumentException("An index already exists with this name");
         }
@@ -47,10 +44,7 @@ public abstract class IndexManager<V> {
         }
 
         if (!exceptions.isEmpty()) {
-            final String message =
-                (exceptions.size() == 1 ? "1 exception" : exceptions.size() + " exceptions")
-                + " occurred during indexing";
-            throw new IndexException(message, exceptions);
+            throw new IndexException((exceptions.size() == 1 ? "1 exception" : exceptions.size() + " exceptions") + " occurred during indexing", exceptions);
         }
     }
 
@@ -90,10 +84,7 @@ public abstract class IndexManager<V> {
     }
 
     public IndexManager<V> copy() {
-        final Set<ReferenceIndex<?, V>> copyOfIndexes =
-            this.indexMap.values()
-                .stream().map(ReferenceIndex::copy).collect(Collectors.toSet());
-        return this.createCopy(copyOfIndexes);
+        return this.createCopy(this.indexMap.values().stream().map(ReferenceIndex::copy).collect(Collectors.toSet()));
     }
 
     protected abstract IndexManager<V> createCopy(Set<ReferenceIndex<?, V>> copyOfIndexes);
@@ -101,7 +92,7 @@ public abstract class IndexManager<V> {
     public Map<String, Collection> getIndexData(Reference<V> reference) {
         final Map<String, Collection> indexData = new HashMap<>();
 
-        for (Entry<String, ReferenceIndex<?, V>> indexEntry : this.indexMap.entrySet()) {
+        for (final Entry<String, ReferenceIndex<?, V>> indexEntry : this.indexMap.entrySet()) {
             indexData.put(indexEntry.getKey(), indexEntry.getValue().getKeys(reference));
         }
 

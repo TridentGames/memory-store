@@ -6,7 +6,9 @@ import com.oop.memorystore.implementation.index.IndexDefinition;
 import com.oop.memorystore.implementation.index.IndexException;
 import com.oop.memorystore.implementation.index.IndexManager;
 import com.oop.memorystore.implementation.index.ReferenceIndex;
-import com.oop.memorystore.implementation.query.IndexMatch;
+import com.oop.memorystore.implementation.query.IMatchable;
+import com.oop.memorystore.implementation.query.imp.IndexContains;
+import com.oop.memorystore.implementation.query.imp.IndexMatch;
 import com.oop.memorystore.implementation.query.Operator;
 import com.oop.memorystore.implementation.query.Query;
 import com.oop.memorystore.implementation.query.QueryDefinition;
@@ -39,31 +41,45 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
     }
 
     @Override
-    public <K> Index<V> index(final String indexName, final IndexDefinition<K, V> indexDefinition)
-        throws IndexException {
+    public <K> Index<V> index(final String indexName, final IndexDefinition<K, V> indexDefinition) throws IndexException {
         return this.indexManager.createIndex(indexName, indexDefinition, this.referenceManager.getReferences());
     }
 
     @Override
     public List<V> get(final Query query, final int limit) {
         final QueryDefinition definition = query.build();
-        final List<IndexMatch> indexMatches = definition.getIndexMatches();
+        final List<IMatchable> indexMatches = definition.getIndexMatches();
         final Operator operator = definition.getOperator();
         final Set<Reference<V>> results = new LinkedHashSet<>();
 
         boolean firstMatch = true;
 
-        for (final IndexMatch indexMatch : indexMatches) {
-            final Set<Reference<V>> references =
-                Optional.ofNullable(this.indexManager.getIndex(indexMatch.getIndexName()))
-                    .map(index -> index.getReferences(indexMatch.getKey()))
+        for (final IMatchable matchable : indexMatches) {
+            if (matchable instanceof IndexMatch) {
+                final Set<Reference<V>> references = Optional.ofNullable(this.indexManager.getIndex(matchable.getIndexName()))
+                    .map(index -> index.getReferences(matchable.getKey()))
                     .orElse(Collections.emptySet());
 
-            if (firstMatch || operator == Operator.OR) {
-                results.addAll(references);
-                firstMatch = false;
-            } else {
-                results.retainAll(references);
+                if (firstMatch || operator == Operator.OR) {
+                    results.addAll(references);
+                    firstMatch = false;
+                } else {
+                    results.retainAll(references);
+                }
+            }
+
+            if (matchable instanceof IndexContains) {
+                for (final Entry<Reference<V>, ? extends Set<?>> referenceEntry : this.indexManager.getIndex(matchable.getIndexName()).getReferenceToKeysMap().entrySet()) {
+                    final Set<?> temp = referenceEntry.getValue();
+
+                    for (final Object o : temp) {
+                        if (o instanceof Collection collection) {
+                            if (collection.contains(matchable.getKey())) {
+                                results.add(referenceEntry.getKey());
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -72,6 +88,23 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
             .map(Reference::get)
             .limit(limit == -1 ? Long.MAX_VALUE : limit)
             .collect(Collectors.toList());
+    }
+
+    private boolean indexDefinitionContains(final ReferenceIndex<?, V> index, final Reference<V> reference, final Object key) {
+        final Set<?> keys = index.getReferenceToKeysMap().get(reference);
+        if (keys == null) {
+            return false;
+        }
+
+        for (final Object o : keys) {
+            if (o instanceof Collection collection) {
+                if (collection.contains(key)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -86,22 +119,22 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
 
     public List<V> remove(final Query query, int limit) {
         final QueryDefinition definition = query.build();
-        final List<IndexMatch> indexMatches = definition.getIndexMatches();
+        final List<IMatchable> indexMatches = definition.getIndexMatches();
 
         final List<V> result = new LinkedList<>();
 
-        for (final IndexMatch indexMatch : indexMatches) {
+        for (final IMatchable matchable : indexMatches) {
             if (limit == 0) {
                 break;
             }
 
-            final Set<Reference<V>> references =
-                Optional.ofNullable(this.indexManager.getIndex(indexMatch.getIndexName()))
-                    .map(index -> index.getReferences(indexMatch.getKey()))
-                    .orElse(new HashSet<>());
+            if (matchable instanceof IndexMatch) {
+                final Set<Reference<V>> references =
+                    Optional.ofNullable(this.indexManager.getIndex(matchable.getIndexName()))
+                        .map(index -> index.getReferences(matchable.getKey()))
+                        .orElse(new HashSet<>());
 
-            final List<V> removed =
-                references
+                final List<V> removed = references
                     .stream()
                     .limit(limit == -1 ? Long.MAX_VALUE : limit)
                     .peek(this.indexManager::removeReference)
@@ -109,9 +142,14 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
                     .peek(this.referenceManager::remove)
                     .collect(Collectors.toList());
 
-            result.addAll(removed);
-            if (limit != -1) {
-                limit -= removed.size();
+                result.addAll(removed);
+                if (limit != -1) {
+                    limit -= removed.size();
+                }
+            }
+
+            if (matchable instanceof IndexContains) {
+                System.out.println("IndexContains 2");
             }
         }
 
@@ -164,8 +202,7 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
         return new StoreQueryImpl<>(this);
     }
 
-    protected abstract Store<V> createCopy(
-        final ReferenceManager<V> referenceManager, final IndexManager<V> indexManager);
+    protected abstract Store<V> createCopy(final ReferenceManager<V> referenceManager, final IndexManager<V> indexManager);
 
     @Override
     public Iterator<V> iterator() {
@@ -265,7 +302,7 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
 
     @Override
     public void printDetails(V value) {
-        System.out.println(String.format("=== Printing Details about %s ==", value));
+        System.out.printf("=== Printing Details about %s ==%n", value);
 
         final Optional<Reference<V>> reference = this.getReferenceManager().findReference(value);
         if (!reference.isPresent()) {
@@ -275,8 +312,8 @@ public abstract class AbstractStore<V> extends AbstractCollection<V> implements 
 
         final Map<String, Collection> indexData = this.indexManager.getIndexData(reference.get());
         System.out.println("=== Indexes ===");
-        for (Entry<String, Collection> indexEntry : indexData.entrySet()) {
-            System.out.println(String.format("Index: %s, keys: %s", indexEntry.getKey(), indexEntry.getValue()));
+        for (final Entry<String, Collection> indexEntry : indexData.entrySet()) {
+            System.out.printf("Index: %s, keys: %s%n", indexEntry.getKey(), indexEntry.getValue());
         }
     }
 

@@ -9,8 +9,8 @@ import com.oop.memorystore.implementation.reference.ReferenceFactory;
  * @param <V> value type
  */
 public class MemoryReferenceFactory<V> implements ReferenceFactory<V> {
-  @Override
-  public Reference<V> createReference(final V obj) {
-    return new MemoryReference<>(obj);
-  }
+    @Override
+    public Reference<V> createReference(final V obj) {
+        return new MemoryReference<>(obj);
+    }
 }
